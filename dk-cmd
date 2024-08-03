@@ -1,0 +1,191 @@
+#!/bin/bash
+
+current=1.0
+
+menu() {
+    clear
+    rm -rf /usr/local/share/dk-cmd/latest.sh
+    echo 'dk-cmd v1.00'
+    echo 'helper version 0.1'
+    echo ''
+    echo 'Choose an Option:'
+    echo '-=-=-=-=-=-=-=-=-'
+    echo '1. Configure'
+    echo '2. Upgrade/Reinstall'
+    echo ''
+    read -p '~$ ' choice
+    case "$choice" in
+        1) config ;;
+        2) upgrade ;;
+        *) echo 'Invalid option. Please try again.'; sleep 3; menu ;;
+    esac
+}
+
+request_sudo() {
+    clear
+    echo 'Enter your `sudo` password when prompted.'
+    sudo -v
+    echo 'Superuser Privileges Granted.'
+    sleep 1
+    updatecheck
+}
+
+config() {
+    clear
+    echo 'Choose an Option:'
+    echo '-=-=-=-=-=-=-=-=-'
+    echo '1. Add Command'
+    echo '2. Remove Command'
+    echo '0. Back'
+    echo ''
+    read -p '~$ ' choice2
+    case "$choice2" in
+        1) add ;;
+        2) sub ;;
+        0) menu ;;
+        *) echo 'Invalid Option. Please choose a correct option.'; sleep 3; config ;;
+    esac
+}
+
+add() {
+    clear
+    echo 'Choose a Command to Add to your Path:'
+    echo '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-'
+    echo '1. `cls`'
+    echo '2. `repopack`'
+    echo ''
+    echo '0. Previous Menu'
+    echo ''
+    read -p "~$ " choice3
+    case "$choice3" in
+        1) add_cls ;;
+        2) add_repopack ;;
+        0) config ;;
+        *) echo 'Invalid Option. Please Try Again.'; sleep 3; add ;;
+    esac
+}
+
+sub() {
+    clear
+    echo 'Choose a Command to Remove from your Path:'
+    echo '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-'
+    echo '1. `cls`'
+    echo '2. `repopack`'
+    echo ''
+    echo '0. Previous Menu'
+    echo ''
+    read -p "~$ " choice3
+    case "$choice3" in
+        1) sub_cls ;;
+        2) sub_repopack ;;
+        0) config ;;
+        *) echo 'Invalid Option. Please Try Again.'; sleep 3; sub ;;
+    esac
+}
+
+add_cls() {
+    echo ''
+    echo 'Adding `cls` please wait...'
+    sudo cp /usr/local/share/dk-cmd/cls /usr/local/bin/cls
+    echo 'Added `cls` you may now use it in the terminal.'
+    sleep 3
+    add
+}
+
+add_repopack() {
+    echo ''
+    echo 'Adding `repopack` please wait...'
+    sudo cp /usr/local/share/dk-cmd/repopack /usr/local/bin/repopack
+    echo 'Added `repopack` you may now use it in the terminal.'
+    sleep 3
+    add
+}
+
+sub_cls() {
+    echo ''
+    echo 'Removing `cls` please wait...'
+    sudo rm -rf /usr/local/bin/cls
+    echo 'Removed `cls`'
+    sleep 3
+    sub
+}
+
+sub_repopack() {
+    echo ''
+    echo 'Removing `repopack` please wait...'
+    sudo rm -rf /usr/local/bin/repopack
+    echo 'Removed `repopack`'
+    sleep 3
+    sub
+}
+
+upgrade() {
+    clear
+    echo 'Choose an Option:'
+    echo '-=-=-=-=-=-=-=-=-'
+    echo '1. Upgrade'
+    echo '2. Reinstall'
+    echo ''
+    echo '0. Return'
+    echo ''
+    read -p "~$ " choice4
+    case "$choice4" in
+        1) upgrade ;;
+        2) reinstall ;;
+        0) menu ;;
+        *) echo "Invalid Option. Please try again."; sleep 3; upgrade ;;
+    esac
+}
+
+updatecheck() {
+    cd /usr/local/share/dk-cmd || exit
+    wget -q https://raw.githubusercontent.com/dk865/updater/main/linux/dk-cmd/latest.sh
+    chmod +x latest.sh
+    source latest.sh
+    latest_version=$(grep -E '^version=' latest.sh | cut -d'=' -f2)
+    if [ "$current" == "$latest_version" ]; then
+        cd || exit
+        menu
+    else
+        echo "Your version is $current, but the latest is $latest_version. Do you want to upgrade? (Y/n)"
+        read -p '~$ ' upgradeyn
+        case "$upgradeyn" in
+            [Yy]) askapt ;;
+            [Nn]) echo "Okay. You can always do this later."; sleep 3; cd || exit; menu ;;
+            *) echo "Please choose either `y` or `n`."; sleep 3; updatecheck ;;
+        esac
+    fi
+}
+
+askapt() {
+    clear
+    echo 'Did you install this package using apt? (y/n)'
+    read -p "~$ " aptyn
+    case "$aptyn" in
+        [Yy]) aptupgrade ;;
+        [Nn]) upgrade_noapt ;;
+        *) echo 'Choose a valid option.'; sleep 3; askapt ;;
+    esac
+}
+
+aptupgrade() {
+    clear
+    echo 'Upgrading using `apt`.'
+    echo 'Because this script might terminate, downloading a small script to update.'
+    wget -q https://raw.githubusercontent.com/dk865/updater/main/linux/dk-cmd/aptupgrade.sh
+    chmod +x aptupgrade.sh
+    source aptupgrade.sh
+    rm -rf aptupgrade.sh
+}
+
+upgrade_noapt() {
+    clear
+    echo 'Removing all assets, ignore any file errors.'
+    sudo rm -rf /usr/local/bin/cls /usr/local/bin/repopack /usr/local/share/dk-cmd/cls /usr/local/share/dk-cmd/repopack
+    echo 'Downloading a Script to upgrade.'
+    wget -q https://raw.githubusercontent.com/dk865/updater/main/linux/dk-cmd/install.sh
+    chmod +x install.sh
+    source install.sh
+}
+
+request_sudo
